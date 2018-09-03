@@ -49,14 +49,27 @@ namespace JFFoundation
     template <typename Value, typename Comparator = JFDefaultLessComparator<Value>>
     size_t Partition(Value* dataSet, size_t startIndex, size_t endIndex, Comparator& comparator)
     {
-		size_t pivot = endIndex;
+		size_t pivot = endIndex-1;
         size_t count = endIndex - startIndex;
         size_t midIndex = startIndex + (count >> 1);
 
+        if (comparator(dataSet[midIndex], dataSet[startIndex]))
+        {
+            Swap(dataSet[midIndex], dataSet[startIndex]);
+        }
+        if (comparator(dataSet[endIndex], dataSet[midIndex]))
+        {
+            Swap(dataSet[endIndex], dataSet[midIndex]);
+        }
+        if (comparator(dataSet[midIndex], dataSet[startIndex]))
+        {
+            Swap(dataSet[midIndex], dataSet[startIndex]);
+        }
+
         Swap(dataSet[pivot], dataSet[midIndex]);
 		
-        size_t leftPos = startIndex;
-        size_t rightPos = endIndex-1;
+        size_t leftPos = startIndex+1;
+        size_t rightPos = endIndex-2;
 		while (true)
 		{
 			while (comparator(dataSet[leftPos], dataSet[pivot]))
@@ -85,7 +98,7 @@ namespace JFFoundation
             return;
 
 		size_t count = endIndex - startIndex;
-		if (count < 128)
+		if (count < 32)
 		{
 		    InsertionSort(dataSet, startIndex, endIndex, comparator);
 		}
