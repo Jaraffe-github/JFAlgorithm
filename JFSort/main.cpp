@@ -6,6 +6,9 @@
 #include <ctime>
 #include <cstdlib>
 #include <chrono>
+#include <random>
+
+#include <string>
 
 class SimpleTimer
 {
@@ -29,6 +32,7 @@ private:
 };
 
 using namespace JFFoundation;
+using namespace JFAlgorithm;
 
 const size_t TestDataSetCount = 10000000ull;
 
@@ -38,26 +42,44 @@ int main()
     double mySortUsageTime = 0.0;
     double stlSortUsageTime = 0.0;
 
+    // string test
+    //std::vector<std::string> testDataSet1;
+    //std::vector<std::string> testDataSet2;
+    //testDataSet1.reserve(TestDataSetCount);
+    //testDataSet2.reserve(TestDataSetCount);
+    //
+    //// Init
+    //for (int i = 0; i < TestDataSetCount; ++i)
+    //{
+    //    std::string temp = "SortAlgorithm Speed Test Number : ";
+    //    temp += std::to_string(i);
+    //    testDataSet1.push_back(temp);
+    //}
+
+    // int test
     std::vector<int> testDataSet1;
     std::vector<int> testDataSet2;
     testDataSet1.reserve(TestDataSetCount);
     testDataSet2.reserve(TestDataSetCount);
-
+    
     // Init
     for (int i = 0; i < TestDataSetCount; ++i)
     {
         testDataSet1.push_back(i);
+        //testDataSet1.push_back(0);
     }
 
     while (true)
     {
         // random and copy
-        std::random_shuffle(testDataSet1.begin(), testDataSet1.end());
+        std::random_device rd;
+        std::mt19937 g(rd());
+        std::shuffle(testDataSet1.begin(), testDataSet1.end(), g);
         testDataSet2 = testDataSet1;
 
         // mySort
         timer.Start();
-        Sort(&testDataSet1[0], 0ull, testDataSet1.size() - 1);
+        Sort(testDataSet1.begin(), testDataSet1.end());
         mySortUsageTime = timer.ElapsedTime();
 
         // stlSort
@@ -68,11 +90,12 @@ int main()
         // check
         for (int i = 0; i < TestDataSetCount; ++i)
         {
-            if (testDataSet1[i] != i)
+            if (testDataSet1[i] != testDataSet2[i])
             {
                 std::cout << "SortFail" << std::endl;
                 std::cout << "Index : " << i << std::endl;
-                std::cout << "Number : " << testDataSet1[i] << std::endl;
+                std::cout << "MySort : " << testDataSet1[i] << std::endl;
+                std::cout << "STLSort : " << testDataSet2[i] << std::endl;
             }
         }
 
