@@ -45,9 +45,9 @@ namespace JFFoundation
         template <class Value, class Comparator>
         FORCEINLINE void Sort3(Value& min, Value& mid, Value& max, Comparator& comparator)
         {
-            if (comparator(min, mid))
+            if (!comparator(mid, min))
             {
-                if (comparator(mid, max))
+                if (!comparator(max, mid))
                     return;
 
                 Swap(mid, max);
@@ -76,88 +76,99 @@ namespace JFFoundation
             for (; i != end; ++i)
             {
                 Iterator j = i;
-                auto t = std::move(*j);
+				auto t(std::move(*j));
 
-                for (Iterator k = i; k != first && comparator(t, *--k); --j)
-                {
-                    *j = std::move(*k);
-                }
-                *j = std::move(t);
+				for (Iterator k = i; k != first && comparator(t, *--k); --j)
+				{
+					*j = std::move(*k);
+				}
+				*j = std::move(t);
             }
         }
 
-        template <class Iterator, class Comparator>
-        FORCEINLINE Iterator Partition(Iterator first, Iterator end, Comparator& comparator)
-        {
-            auto count = end - first;
+		template <class Iterator, class Comparator>
+		void Sort(Iterator first, Iterator end, Comparator comparator)
+		{
+			while (true)
+			{
+				auto count = end - first;
 
-            Iterator min = first;
-            Iterator mid = first + (count >> 1);
-            Iterator max = end - 1;
-            Iterator pivot = end - 2;
+				switch (count)
+				{
+				case 0:
+				case 1:
+					return;
+				case 2:
+					if (comparator(*(first + 1), *first))
+						Swap(*first, *(first + 1));
+					return;
+				case 3:
+					Sort3(*first, *(first + 1), *(first + 2), comparator);
+					return;
+				}
 
-            Sort3(*min, *mid, *max, comparator);
+				if (count < 16)
+				{
+					InsertionSort(first, end, comparator);
+					return;
+				}
+				else
+				{
+					// midian 3
+					Iterator min = first;
+					Iterator mid = first + (count >> 1);
+					Iterator max = end - 1;
+					Sort3(*min, *mid, *max, comparator);
 
-            Swap(*pivot, *mid);
+					// setting pivot position
+					Iterator pivot = end - 1;
+					Swap(*pivot, *mid);
 
-            Iterator left = ++min;
-            Iterator right = pivot - 1;
-            while (true)
-            {
-                while (comparator(*left, *pivot))
-                    ++left;
+					// pass compara to sorted value
+					++min;
+					--max;
 
-                while (comparator(*pivot, *right))
-                    --right;
+					// split partition
+					while (true)
+					{
+						while (comparator(*min, *pivot))
+							++min;
 
-                if (left >= right)
-                    break;
+						while (comparator(*pivot, *max))
+							--max;
 
-                Swap(*left, *right);
+						if (min >= max)
+							break;
 
-                ++left;
-                --right;
-            }
-            Swap(*left, *pivot);
+						Swap(*min, *max);
 
-            return left;
-        }
+						++min;
+						--max;
+					}
+
+					// new pivot position
+					Swap(*min, *pivot);
+					pivot = min;
+
+					// small range to tail recursion
+					if ((pivot - first) < (end - pivot))
+					{
+						Sort(first, pivot, comparator);
+						first = pivot + 1;
+					}
+					else
+					{
+						Sort(pivot + 1, end, comparator);
+						end = pivot;
+					}
+				}
+			}
+		}
 
         template <class Iterator, class Comparator = JFDefaultLessComparator<void>>
-        void Sort(Iterator first, Iterator end, Comparator comparator = Comparator())
+        void Sort(Iterator first, Iterator end)
         {
-            _Sort(first, end, comparator);
-        }
-
-        template <class Iterator, class Comparator>
-        void _Sort(Iterator first, Iterator end, Comparator comparator)
-        {
-            auto count = end - first;
-
-            switch (count)
-            {
-            case 0:
-            case 1:
-                return;
-            case 2:
-                if (comparator(*(first + 1), *first))
-                    Swap(*first, *(first + 1));
-                return;
-            case 3:
-                Sort3(*first, *(first+1), *(first+2), comparator);
-                return;
-            }
-
-            if (count < 16)
-            {
-                InsertionSort(first, end, comparator);
-            }
-            else
-            {
-                Iterator pivot = Partition(first, end, comparator);
-                _Sort(first, pivot, comparator);
-                _Sort(pivot + 1, end, comparator);
-            }
+            Sort(first, end, Comparator());
         }
     }
 }
