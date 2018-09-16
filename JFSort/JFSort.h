@@ -6,6 +6,18 @@ namespace JFFoundation
 {
     namespace JFAlgorithm
     {
+		template <class T>
+		struct RemoveReferance
+		{
+			using Type = T;
+		};
+
+		template <class T>
+		auto Move(T&& value)
+		{
+			return static_cast<typename RemoveReferance<T>::Type&&>(value);
+		};
+
         template <class Value>
         struct JFDefaultLessComparator
         {
@@ -37,9 +49,9 @@ namespace JFFoundation
         template <class T>
         FORCEINLINE void Swap(T& lhs, T& rhs)
         {
-            T temp(std::move(lhs));
-            lhs = std::move(rhs);
-            rhs = std::move(temp);
+            T temp(Move(lhs));
+            lhs = Move(rhs);
+            rhs = Move(temp);
         }
 
         template <class Value, class Comparator>
@@ -70,19 +82,17 @@ namespace JFFoundation
         }
 
         template <class Iterator, class Comparator>
-        FORCEINLINE void InsertionSort(Iterator first, Iterator end, Comparator& comparator)
+        void InsertionSort(Iterator first, Iterator end, Comparator& comparator)
         {
             Iterator i = first+1;
             for (; i != end; ++i)
             {
                 Iterator j = i;
-				auto t(std::move(*j));
 
+				auto t(Move(*j));
 				for (Iterator k = i; k != first && comparator(t, *--k); --j)
-				{
-					*j = std::move(*k);
-				}
-				*j = std::move(t);
+					*j = Move(*k);
+				*j = Move(t);
             }
         }
 
@@ -112,55 +122,53 @@ namespace JFFoundation
 					InsertionSort(first, end, comparator);
 					return;
 				}
-				else
+
+				// midian 3
+				Iterator min = first;
+				Iterator mid = first + (count >> 1);
+				Iterator max = end - 1;
+				Sort3(*min, *mid, *max, comparator);
+
+				// setting pivot position
+				Iterator pivot = max;
+				Swap(*pivot, *mid);
+
+				// pass compara to sorted value
+				++min;
+				--max;
+
+				// split partition
+				while (true)
 				{
-					// midian 3
-					Iterator min = first;
-					Iterator mid = first + (count >> 1);
-					Iterator max = end - 1;
-					Sort3(*min, *mid, *max, comparator);
+					while (comparator(*min, *pivot))
+						++min;
 
-					// setting pivot position
-					Iterator pivot = end - 1;
-					Swap(*pivot, *mid);
+					while (comparator(*pivot, *max))
+						--max;
 
-					// pass compara to sorted value
+					if (min >= max)
+						break;
+
+					Swap(*min, *max);
+
 					++min;
 					--max;
+				}
 
-					// split partition
-					while (true)
-					{
-						while (comparator(*min, *pivot))
-							++min;
+				// new pivot position
+				Swap(*min, *pivot);
+				pivot = min;
 
-						while (comparator(*pivot, *max))
-							--max;
-
-						if (min >= max)
-							break;
-
-						Swap(*min, *max);
-
-						++min;
-						--max;
-					}
-
-					// new pivot position
-					Swap(*min, *pivot);
-					pivot = min;
-
-					// small range to tail recursion
-					if ((pivot - first) < (end - pivot))
-					{
-						Sort(first, pivot, comparator);
-						first = pivot + 1;
-					}
-					else
-					{
-						Sort(pivot + 1, end, comparator);
-						end = pivot;
-					}
+				// small range to tail recursion
+				if ((pivot - first) < (end - pivot))
+				{
+					Sort(first, pivot, comparator);
+					first = pivot + 1;
+				}
+				else
+				{
+					Sort(pivot + 1, end, comparator);
+					end = pivot;
 				}
 			}
 		}

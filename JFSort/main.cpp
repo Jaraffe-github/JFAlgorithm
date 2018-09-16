@@ -34,7 +34,7 @@ private:
 using namespace JFFoundation;
 using namespace JFAlgorithm;
 
-const size_t TestDataSetCount = 100000000ull;
+const size_t TestDataSetCount = 10ull;
 
 int main()
 {
@@ -67,8 +67,8 @@ int main()
     {
         //testDataSet1.push_back(i);
 		//testDataSet1.push_back(0);
-        testDataSet1.push_back(i);
-		//testDataSet1.push_back(rand() % 100);
+        //testDataSet1.push_back(i);
+		testDataSet1.push_back(rand() % 4);
     }
 
     while (true)
